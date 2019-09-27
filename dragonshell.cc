@@ -30,7 +30,14 @@ std::vector<std::string> tokenize(const std::string &str, const char *delim) {
 
     return tokens;
 }
-
+vector<char*> stringToCharVector(vector<string> &original){
+    vector<char*> charVector;
+    for (string s: original){
+        char* constS = &s[0];
+        charVector.push_back(constS);
+    }
+    return charVector;
+}
 void printWelcome() {
     const char *welcome =
             "\n"
@@ -60,6 +67,8 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
         newPaths = tokenize(tokens[1], ":");
         a2path(newPaths, paths);
         return true;
+    } else if (tokens[0] == "exit"){
+        _exit(1);
     }
     return false;
 }
@@ -88,11 +97,13 @@ int main(int argc, char **argv) {
                 if (rc == 0) {
                     int result;
                     //child process
+                    vector<char*> charTokens = stringToCharVector(tokens);
+                    execve(tokens[0].c_str(), &charTokens[0], environ);
                     return result;
                 } else {
                     //parent process
                     int w_status;
-                    int wc = wait(&w_status);
+                    wait(&w_status);
                     if (WIFEXITED(w_status) != 1) {
                         cout << "Error" << "\n";
                     }

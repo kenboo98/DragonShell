@@ -30,14 +30,18 @@ std::vector<std::string> tokenize(const std::string &str, const char *delim) {
 
     return tokens;
 }
-vector<char*> stringToCharVector(vector<string> &original){
-    vector<char*> charVector;
-    for (string s: original){
-        char* constS = &s[0];
+
+vector<char *> stringToCharVector(vector<string> &original) {
+    vector<char *> charVector;
+    for (string s: original) {
+        char *cstr = new char[s.size() + 1];
+        std::strcpy(cstr, s.c_str());
+        char *constS = &cstr[0];
         charVector.push_back(constS);
     }
     return charVector;
 }
+
 void printWelcome() {
     const char *welcome =
             "\n"
@@ -67,7 +71,7 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
         newPaths = tokenize(tokens[1], ":");
         a2path(newPaths, paths);
         return true;
-    } else if (tokens[0] == "exit"){
+    } else if (tokens[0] == "exit") {
         _exit(1);
     }
     return false;
@@ -95,10 +99,18 @@ int main(int argc, char **argv) {
             } else {
                 int rc = fork();
                 if (rc == 0) {
-                    int result;
+                    int result = 0;
                     //child process
-                    vector<char*> charTokens = stringToCharVector(tokens);
+                    vector<char *> charTokens = stringToCharVector(tokens);
                     execve(tokens[0].c_str(), &charTokens[0], environ);
+
+                    for (string path: paths) {
+                        vector<string> temp(tokens);
+                        temp[0] = path + temp[0];
+                        charTokens = stringToCharVector(temp);
+                        execve(temp[0].c_str(), &charTokens[0], environ);
+                    }
+                    cout << "Command not found" << "\n";
                     return result;
                 } else {
                     //parent process

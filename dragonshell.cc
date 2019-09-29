@@ -123,6 +123,43 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
 }
 
 
+int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
+    int fd[2];
+    if (pipe(fd) < 0)
+        perror("Piping Error");
+    vector<string> tokens;
+    int rc = fork();
+    if (rc == 0) {
+        dup2(fd[1], STDOUT_FILENO);	// stdout = fd[1]
+        close(fd[1]); 				// stdout is still open
+        close(fd[0]);
+        tokens = tokenize(pipedPrograms[0], " ");
+        exec(tokens, paths);
+
+    } else {
+        //fork the next process
+        int w_status;
+        wait(&w_status);
+        int rc = fork();
+        if (rc == 0){
+            close(fd[1]);
+            dup2(fd[0], STDIN_FILENO);
+            close(fd[0]);
+            tokens = tokenize(pipedPrograms[1], " ");
+            exec(tokens, paths);
+        } else {
+            close(fd[0]);
+            close(fd[1]);
+            int w_status;
+            wait(&w_status);
+        }
+
+    }
+
+
+    return 0;
+}
+
 int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
     int rc = fork();
     if (rc == 0) {
@@ -138,6 +175,7 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
             cout << "Error" << "\n";
         }
     }
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -157,9 +195,13 @@ int main(int argc, char **argv) {
         for (string command: commands) {
 
             vector<string> redirects;
+            vector<string> piped;
             redirects = tokenize(command, ">");
+            piped = tokenize(command, "|");
             if (redirects.size() > 1) {
                 outputRedirection(redirects, paths);
+            } else if (piped.size() > 1 ) {
+                pipePrograms(piped, paths);
             } else {
                 vector<string> tokens;
                 tokens = tokenize(command, " ");
@@ -169,6 +211,7 @@ int main(int argc, char **argv) {
                 } else {
                     singleExternalProgram(tokens, paths);
                 }
+
             }
 
         }

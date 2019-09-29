@@ -99,12 +99,12 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
 
 int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
 
-    int rc = fork();
+    pid_t rc = fork();
     if (rc == 0) {
         int file_descriptor;
         removeSpaces(redirectCommands[1]);
         string filename = redirectCommands[1];
-        if ((file_descriptor = open(filename.c_str(), O_CREAT | O_WRONLY, 0644)) < 0)
+        if ((file_descriptor = open(filename.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0)
             perror("open failed!");
         dup2(file_descriptor, STDOUT_FILENO);    // stdin = ffd
         close(file_descriptor);
@@ -113,7 +113,7 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
     } else {
         //parent process
         int w_status;
-        wait(&w_status);
+        waitpid(rc, &w_status, 0);
         if (WIFEXITED(w_status) != 1) {
             cout << "Error" << "\n";
         }
@@ -128,7 +128,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
     if (pipe(fd) < 0)
         perror("Piping Error");
     vector<string> tokens;
-    int rc = fork();
+    pid_t rc = fork();
     if (rc == 0) {
         dup2(fd[1], STDOUT_FILENO);	// stdout = fd[1]
         close(fd[1]); 				// stdout is still open
@@ -139,8 +139,8 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
     } else {
         //fork the next process
         int w_status;
-        wait(&w_status);
-        int rc = fork();
+        waitpid(rc, &w_status, 0);
+        pid_t rc = fork();
         if (rc == 0){
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
@@ -151,7 +151,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
             close(fd[0]);
             close(fd[1]);
             int w_status;
-            wait(&w_status);
+            waitpid(rc, &w_status, 0);
         }
 
     }
@@ -159,18 +159,36 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
 
     return 0;
 }
+int backgroundProgram(vector<string> &tokens, vector<string> &paths){
+    tokens.pop_back();
+
+    int rc = fork();
+    if (rc == 0) {
+        int devnull;
+        if ((devnull = open("/dev/null", O_WRONLY, 0644)) < 0)
+            perror("Could not write to devnull!");
+        dup2(devnull, STDOUT_FILENO);    // stdin = ffd
+        close(devnull);
+        exec(tokens, paths);
+        return 0;
+    } else{
+        cout << "PID " << rc << " is running in the background" << "\n";
+    }
+    return 0;
+}
 
 int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
-    int rc = fork();
+    pid_t rc = fork();
+
     if (rc == 0) {
         int result = 0;
         //child process
         exec(tokens, paths);
         return result;
-    } else {
+    } else{
         //parent process
         int w_status;
-        wait(&w_status);
+        waitpid(rc, &w_status, 0);
         if (WIFEXITED(w_status) != 1) {
             cout << "Error" << "\n";
         }
@@ -209,7 +227,11 @@ int main(int argc, char **argv) {
                 if (builtInCommands(tokens, paths)) {
 
                 } else {
-                    singleExternalProgram(tokens, paths);
+                    if (tokens[tokens.size()-1] == "&"){
+                        backgroundProgram(tokens, paths);
+                    } else {
+                        singleExternalProgram(tokens, paths);
+                    }
                 }
 
             }

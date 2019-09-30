@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include "builtin.h"
 #include <algorithm>
+#include <signal.h>
 /**
  * @brief Tokenize a string 
  * 
@@ -195,14 +196,21 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
     }
     return 0;
 }
-
+void setSignalHandlers(){
+    struct sigaction sa;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = SIG_IGN;
+    sigaction( SIGINT, &sa, NULL );
+    sigaction( SIGTSTP, &sa, NULL);
+}
 int main(int argc, char **argv) {
     // print the string prompt without a newline, before beginning to read
     // tokenize the input, run the command(s), and print the result
     // do this in a loop
     printWelcome();
     vector<string> paths = {"/usr/bin/", "/bin/"};
-
+    setSignalHandlers();
     while (true) {
         cout << "dragonshell > ";
         string input;

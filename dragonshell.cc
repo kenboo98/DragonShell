@@ -49,12 +49,12 @@ vector<char *> stringToCharVector(vector<string> &original) {
     return charVector;
 }
 
-void exec(vector<string> tokens, vector<string> &paths) {
+void exec(vector<string> &tokens, vector<string> &paths) {
 
     vector<char *> charTokens = stringToCharVector(tokens);
     execve(tokens[0].c_str(), &charTokens[0], environ);
 
-    for (string path: paths) {
+    for (const auto& path: paths) {
         vector<string> temp(tokens);
         temp[0] = path + temp[0];
         charTokens = stringToCharVector(temp);

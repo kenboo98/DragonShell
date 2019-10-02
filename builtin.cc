@@ -16,13 +16,16 @@ int pwd() {
 }
 
 int cd(vector<string> &tokens) {
+
     int result = chdir(tokens[1].c_str());
     if (result != 1) {
         switch (errno) {
             case ENOENT:
-                cout << "File or Folder does not exist." << "\n";
+                cout << "No such file or directory" << "\n";
             case EACCES:
                 cout << "Permission denied" << "\n";
+            case EFAULT:
+                cout << "Expected Argument to \"cd\"" << "\n";
         }
     }
     return result;

@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include "builtin.h"
 #include <algorithm>
+#include <sys/types.h>
 #include <signal.h>
 /**
  * @brief Tokenize a string 
@@ -93,7 +94,8 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
         a2path(newPaths, paths);
         return true;
     } else if (tokens[0] == "exit") {
-        _exit(1);
+        kill(0, SIGHUP);
+        //_exit(1);
     }
     return false;
 }

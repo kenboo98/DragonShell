@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <signal.h>
+#include <errno.h>
+
 using namespace std;
 
 
@@ -31,7 +33,7 @@ int cd(vector<string> &tokens) {
     return result;
 }
 
-int printPath(vector<string> &paths) {
+void printPath(vector<string> &paths) {
     cout << "Current PATH: ";
     for (vector<string>::size_type i = 0; i != paths.size(); i++) {
         cout << paths[i];
@@ -42,7 +44,7 @@ int printPath(vector<string> &paths) {
     cout << "\n";
 }
 
-int a2path(vector<string> &newPaths, vector<string> &paths) {
+void a2path(vector<string> &newPaths, vector<string> &paths) {
     if (newPaths[0] == "$PATH") {
         for (vector<string>::size_type i = 1; i != newPaths.size(); i++) {
             paths.push_back(newPaths[i]);

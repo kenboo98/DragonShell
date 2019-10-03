@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include "builtin.h"
 #include <algorithm>
-#include <sys/types.h>
 #include <signal.h>
 /**
  * @brief Tokenize a string 
@@ -275,7 +274,6 @@ int main(int argc, char **argv) {
             } else {
                 vector<string> tokens;
                 tokens = tokenize(command, " ");
-                int parentPid = getpid();
                 if (builtInCommands(tokens, paths, background)) {
 
                 } else {

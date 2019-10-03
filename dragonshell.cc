@@ -55,7 +55,7 @@ void exec(vector<string> &tokens, vector<string> &paths) {
     vector<char *> charTokens = stringToCharVector(tokens);
     execve(tokens[0].c_str(), &charTokens[0], environ);
 
-    for (const auto& path: paths) {
+    for (const auto &path: paths) {
         vector<string> temp(tokens);
         temp[0] = path + temp[0];
         charTokens = stringToCharVector(temp);
@@ -66,19 +66,54 @@ void exec(vector<string> &tokens, vector<string> &paths) {
 
 void printWelcome() {
     const char *welcome =
-            "\n"
-            "                        \\`-\\`-._\n"
-            "                         \\` )`. `-.__      ,\n"
-            "      '' , . _       _,-._;'_,-`__,-'    ,/\n"
-            "     : `. ` , _' :- '--'._ ' `------._,-;'\n"
-            "      `- ,`- '            `--..__,,---'   \n"
-            ""
-            "               Welcome to Dragon Shell!     \n";
+            "                                        ,   ,\n"
+            "                                        $,  $,     ,\n"
+            "                                        \"ss.$ss. .s'\n"
+            "                                ,     .ss$$$$$$$$$$s,\n"
+            "                                $. s$$$$$$$$$$$$$$`$$Ss\n"
+            "                                \"$$$$$$$$$$$$$$$$$$o$$$       ,\n"
+            "                               s$$$$$$$$$$$$$$$$$$$$$$$$s,  ,s\n"
+            "                              s$$$$$$$$$\"$$$$$$\"\"\"\"$$$$$$\"$$$$$,\n"
+            "                              s$$$$$$$$$$s\"\"$$$$ssssss\"$$$$$$$$\"\n"
+            "                             s$$$$$$$$$$'         `\"\"\"ss\"$\"$s\"\"\n"
+            "                             s$$$$$$$$$$,              `\"\"\"\"\"$  .s$$s\n"
+            "                             s$$$$$$$$$$$$s,...               `s$$'  `\n"
+            "                         `ssss$$$$$$$$$$$$$$$$$$$$####s.     .$$\"$.   , s-\n"
+            "                           `\"\"\"\"$$$$$$$$$$$$$$$$$$$$#####$$$$$$\"     $.$'\n"
+            "                                 \"$$$$$$$$$$$$$$$$$$$$$####s\"\"     .$$$|\n"
+            "                                  \"$$$$$$$$$$$$$$$$$$$$$$$$##s    .$$\" $\n"
+            "                                   $$\"\"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\"   `\n"
+            "                                  $$\"  \"$\"$$$$$$$$$$$$$$$$$$$$S\"\"\"\"'\n"
+            "                             ,   ,\"     '  $$$$$$$$$$$$$$$$####s\n"
+            "                             $.          .s$$$$$$$$$$$$$$$$$####\"\n"
+            "                 ,           \"$s.   ..ssS$$$$$$$$$$$$$$$$$$$####\"\n"
+            "                 $           .$$$S$$$$$$$$$$$$$$$$$$$$$$$$#####\"\n"
+            "                 Ss     ..sS$$$$$$$$$$$$$$$$$$$$$$$$$$$######\"\"\n"
+            "                  \"$$sS$$$$$$$$$$$$$$$$$$$$$$$$$$$########\"\n"
+            "           ,      s$$$$$$$$$$$$$$$$$$$$$$$$#########\"\"'\n"
+            "           $    s$$$$$$$$$$$$$$$$$$$$$#######\"\"'      s'         ,\n"
+            "           $$..$$$$$$$$$$$$$$$$$$######\"'       ....,$$....    ,$\n"
+            "            \"$$$$$$$$$$$$$$$######\"' ,     .sS$$$$$$$$$$$$$$$$s$$\n"
+            "              $$$$$$$$$$$$#####\"     $, .s$$$$$$$$$$$$$$$$$$$$$$$$s.\n"
+            "   )          $$$$$$$$$$$#####'      `$$$$$$$$$###########$$$$$$$$$$$.\n"
+            "  ((          $$$$$$$$$$$#####       $$$$$$$$###\"       \"####$$$$$$$$$$\n"
+            "  ) \\         $$$$$$$$$$$$####.     $$$$$$###\"             \"###$$$$$$$$$   s'\n"
+            " (   )        $$$$$$$$$$$$$####.   $$$$$###\"                ####$$$$$$$$s$$'\n"
+            " )  ( (       $$\"$$$$$$$$$$$#####.$$$$$###' -Tua Xiong     .###$$$$$$$$$$\"\n"
+            " (  )  )   _,$\"   $$$$$$$$$$$$######.$$##'                .###$$$$$$$$$$\n"
+            " ) (  ( \\.         \"$$$$$$$$$$$$$#######,,,.          ..####$$$$$$$$$$$\"\n"
+            "(   )$ )  )        ,$$$$$$$$$$$$$$$$$$####################$$$$$$$$$$$\"\n"
+            "(   ($$  ( \\     _sS\"  `\"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$S$$,\n"
+            " )  )$$$s ) )  .      .   `$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\"'  `$$\n"
+            "  (   $$$Ss/  .$,    .$,,s$$$$$$##S$$$$$$$$$$$$$$$$$$$$$$$$S\"\"        '\n"
+            "    \\)_$$$$$$$$$$$$$$$$$$$$$$$##\"  $$        `$$.        `$$.\n"
+            "        `\"S$$$$$$$$$$$$$$$$$#\"      $          `$          `$\n"
+            "            `\"\"\"\"\"\"\"\"\"\"\"\"\"'         '           '           '\n";
 
     cout << welcome;
 }
 
-bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
+bool builtInCommands(vector<string> &tokens, vector<string> &paths, int &background) {
     if (tokens[0] == "pwd") {
         pwd();
         return true;
@@ -94,8 +129,10 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths) {
         a2path(newPaths, paths);
         return true;
     } else if (tokens[0] == "exit") {
-        kill(0, SIGHUP);
-        //_exit(1);
+        if (background != -1) {
+            kill(background, SIGHUP);
+        }
+        _exit(1);
     }
     return false;
 }
@@ -133,8 +170,8 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
     vector<string> tokens;
     pid_t rc = fork();
     if (rc == 0) {
-        dup2(fd[1], STDOUT_FILENO);	// stdout = fd[1]
-        close(fd[1]); 				// stdout is still open
+        dup2(fd[1], STDOUT_FILENO);    // stdout = fd[1]
+        close(fd[1]);                // stdout is still open
         close(fd[0]);
         tokens = tokenize(pipedPrograms[0], " ");
         exec(tokens, paths);
@@ -144,7 +181,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
         int w_status;
         waitpid(rc, &w_status, 0);
         pid_t rc = fork();
-        if (rc == 0){
+        if (rc == 0) {
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
@@ -162,11 +199,13 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
 
     return 0;
 }
-int backgroundProgram(vector<string> &tokens, vector<string> &paths){
+
+int backgroundProgram(vector<string> &tokens, vector<string> &paths, int &background) {
     tokens.pop_back();
 
     int rc = fork();
     if (rc == 0) {
+        background = rc;
         int devnull;
         if ((devnull = open("/dev/null", O_WRONLY, 0644)) < 0)
             perror("Could not write to devnull!");
@@ -174,7 +213,7 @@ int backgroundProgram(vector<string> &tokens, vector<string> &paths){
         close(devnull);
         exec(tokens, paths);
         return 0;
-    } else{
+    } else {
         cout << "PID " << rc << " is running in the background" << "\n";
     }
     return 0;
@@ -188,7 +227,7 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
         //child process
         exec(tokens, paths);
         return result;
-    } else{
+    } else {
         //parent process
         int w_status;
         waitpid(rc, &w_status, 0);
@@ -198,14 +237,16 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
     }
     return 0;
 }
-void setSignalHandlers(){
+
+void setSignalHandlers() {
     struct sigaction sa;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = SIG_IGN;
-    sigaction( SIGINT, &sa, NULL );
-    sigaction( SIGTSTP, &sa, NULL);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTSTP, &sa, NULL);
 }
+
 int main(int argc, char **argv) {
     // print the string prompt without a newline, before beginning to read
     // tokenize the input, run the command(s), and print the result
@@ -213,6 +254,7 @@ int main(int argc, char **argv) {
     printWelcome();
     vector<string> paths = {"/usr/bin/", "/bin/"};
     setSignalHandlers();
+    int background = -1;
     while (true) {
         cout << "dragonshell > ";
         string input;
@@ -228,17 +270,17 @@ int main(int argc, char **argv) {
             piped = tokenize(command, "|");
             if (redirects.size() > 1) {
                 outputRedirection(redirects, paths);
-            } else if (piped.size() > 1 ) {
+            } else if (piped.size() > 1) {
                 pipePrograms(piped, paths);
             } else {
                 vector<string> tokens;
                 tokens = tokenize(command, " ");
                 int parentPid = getpid();
-                if (builtInCommands(tokens, paths)) {
+                if (builtInCommands(tokens, paths, background)) {
 
                 } else {
-                    if (tokens[tokens.size()-1] == "&"){
-                        backgroundProgram(tokens, paths);
+                    if (tokens[tokens.size() - 1] == "&") {
+                        backgroundProgram(tokens, paths, background);
                     } else {
                         singleExternalProgram(tokens, paths);
                     }

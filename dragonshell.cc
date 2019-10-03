@@ -49,12 +49,12 @@ vector<char *> stringToCharVector(vector<string> &original) {
     return charVector;
 }
 
-void exec(vector<string> &tokens, vector<string> &paths) {
+void exec(vector<string> &tokens, vector<string> &dPaths) {
 
     vector<char *> charTokens = stringToCharVector(tokens);
     execve(tokens[0].c_str(), &charTokens[0], environ);
 
-    for (const auto &path: paths) {
+    for (const auto &path: dPaths) {
         vector<string> temp(tokens);
         temp[0] = path + temp[0];
         charTokens = stringToCharVector(temp);
@@ -112,7 +112,7 @@ void printWelcome() {
     cout << welcome;
 }
 
-bool builtInCommands(vector<string> &tokens, vector<string> &paths, int &background) {
+bool builtInCommands(vector<string> &tokens, vector<string> &dPaths, int &background) {
     if (tokens[0] == "pwd") {
         pwd();
         return true;
@@ -120,12 +120,12 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths, int &backgro
         cd(tokens);
         return true;
     } else if (tokens[0] == "$PATH") {
-        printPath(paths);
+        printPath(dPaths);
         return true;
     } else if (tokens[0] == "a2path") {
         vector<string> newPaths;
         newPaths = tokenize(tokens[1], ":");
-        a2path(newPaths, paths);
+        a2path(newPaths, dPaths);
         return true;
     } else if (tokens[0] == "exit") {
         dsExit(background);
@@ -133,7 +133,7 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths, int &backgro
     return false;
 }
 
-int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
+int outputRedirection(vector<string> &redirectCommands, vector<string> &dPaths) {
 
     pid_t rc = fork();
     if (rc == 0) {
@@ -145,7 +145,7 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
         dup2(file_descriptor, STDOUT_FILENO);    // stdin = ffd
         close(file_descriptor);
         vector<string> tokens = tokenize(redirectCommands[0], " ");
-        exec(tokens, paths);
+        exec(tokens, dPaths);
     } else {
         //parent process
         int w_status;
@@ -159,7 +159,7 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &paths) {
 }
 
 
-int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
+int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
     int fd[2];
     if (pipe(fd) < 0)
         perror("Piping Error");
@@ -170,7 +170,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
         close(fd[1]);                // stdout is still open
         close(fd[0]);
         tokens = tokenize(pipedPrograms[0], " ");
-        exec(tokens, paths);
+        exec(tokens, dPaths);
 
     } else {
         //fork the next process
@@ -182,7 +182,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
             tokens = tokenize(pipedPrograms[1], " ");
-            exec(tokens, paths);
+            exec(tokens, dPaths);
         } else {
             close(fd[0]);
             close(fd[1]);
@@ -196,7 +196,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &paths) {
     return 0;
 }
 
-int backgroundProgram(vector<string> &tokens, vector<string> &paths, int &background) {
+int backgroundProgram(vector<string> &tokens, vector<string> &dPaths, int &background) {
     tokens.pop_back();
 
     int rc = fork();
@@ -207,7 +207,7 @@ int backgroundProgram(vector<string> &tokens, vector<string> &paths, int &backgr
             perror("Could not write to devnull!");
         dup2(devnull, STDOUT_FILENO);    // stdin = ffd
         close(devnull);
-        exec(tokens, paths);
+        exec(tokens, dPaths);
         return 0;
     } else {
         cout << "PID " << rc << " is running in the background" << "\n";
@@ -215,13 +215,13 @@ int backgroundProgram(vector<string> &tokens, vector<string> &paths, int &backgr
     return 0;
 }
 
-int singleExternalProgram(vector<string> &tokens, vector<string> &paths) {
+int singleExternalProgram(vector<string> &tokens, vector<string> &dPaths) {
     pid_t rc = fork();
 
     if (rc == 0) {
         int result = 0;
         //child process
-        exec(tokens, paths);
+        exec(tokens, dPaths);
         return result;
     } else {
         //parent process
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
     // tokenize the input, run the command(s), and print the result
     // do this in a loop
     printWelcome();
-    vector<string> paths = {"/usr/bin/", "/bin/"};
+    vector<string> dPaths = {"/usr/bin/", "/bin/"};
     setSignalHandlers();
     int background = -1;
     while (true) {
@@ -268,19 +268,19 @@ int main(int argc, char **argv) {
             redirects = tokenize(command, ">");
             piped = tokenize(command, "|");
             if (redirects.size() > 1) {
-                outputRedirection(redirects, paths);
+                outputRedirection(redirects, dPaths);
             } else if (piped.size() > 1) {
-                pipePrograms(piped, paths);
+                pipePrograms(piped, dPaths);
             } else {
                 vector<string> tokens;
                 tokens = tokenize(command, " ");
-                if (builtInCommands(tokens, paths, background)) {
+                if (builtInCommands(tokens, dPaths, background)) {
 
                 } else {
                     if (tokens[tokens.size() - 1] == "&") {
-                        backgroundProgram(tokens, paths, background);
+                        backgroundProgram(tokens, dPaths, background);
                     } else {
-                        singleExternalProgram(tokens, paths);
+                        singleExternalProgram(tokens, dPaths);
                     }
                 }
 

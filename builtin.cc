@@ -33,24 +33,24 @@ int cd(vector<string> &tokens) {
     return result;
 }
 
-void printPath(vector<string> &paths) {
+void printPath(vector<string> &dPaths) {
     cout << "Current PATH: ";
-    for (vector<string>::size_type i = 0; i != paths.size(); i++) {
-        cout << paths[i];
-        if (i != paths.size() - 1) {
+    for (vector<string>::size_type i = 0; i != dPaths.size(); i++) {
+        cout << dPaths[i];
+        if (i != dPaths.size() - 1) {
             cout << ":";
         }
     }
     cout << "\n";
 }
 
-void a2path(vector<string> &newPaths, vector<string> &paths) {
+void a2path(vector<string> &newPaths, vector<string> &dPaths) {
     if (newPaths[0] == "$PATH") {
         for (vector<string>::size_type i = 1; i != newPaths.size(); i++) {
-            paths.push_back(newPaths[i]);
+            dPaths.push_back(newPaths[i]);
         }
     } else {
-        paths.swap(newPaths);
+        dPaths.swap(newPaths);
     }
 
 }

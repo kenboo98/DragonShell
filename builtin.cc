@@ -5,7 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <iostream>
-
+#include <signal.h>
 using namespace std;
 
 
@@ -51,4 +51,10 @@ int a2path(vector<string> &newPaths, vector<string> &paths) {
         paths.swap(newPaths);
     }
 
+}
+int dsExit(int &background){
+    if (background != -1) {
+        kill(background, SIGHUP);
+    }
+    _exit(1);
 }

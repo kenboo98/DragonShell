@@ -15,3 +15,4 @@ int pwd();
 int cd(vector<string> &tokens);
 int printPath(vector<string> &paths);
 int a2path(vector<string> &newPaths, vector<string> &paths);
+int dsExit(int &background);

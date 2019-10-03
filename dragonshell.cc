@@ -129,10 +129,7 @@ bool builtInCommands(vector<string> &tokens, vector<string> &paths, int &backgro
         a2path(newPaths, paths);
         return true;
     } else if (tokens[0] == "exit") {
-        if (background != -1) {
-            kill(background, SIGHUP);
-        }
-        _exit(1);
+        dsExit(background);
     }
     return false;
 }
@@ -258,7 +255,10 @@ int main(int argc, char **argv) {
     while (true) {
         cout << "dragonshell > ";
         string input;
-        getline(cin, input);
+        if (!getline(cin, input)){
+            cout << "\n";
+            dsExit(background);
+        }
 
         vector<string> commands;
         commands = tokenize(input, ";");

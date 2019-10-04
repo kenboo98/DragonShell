@@ -250,6 +250,7 @@ int main(int argc, char **argv) {
     printWelcome();
     vector<string> dPaths = {"/usr/bin/", "/bin/"};
     setSignalHandlers();
+    // store the PID of the background task.
     int background = -1;
     while (true) {
         cout << "dragonshell > ";

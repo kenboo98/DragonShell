@@ -11,6 +11,8 @@
 
 using namespace std;
 
+pid_t currentChild = -1;
+
 std::vector<std::string> tokenize(const std::string &str, const char *delim) {
     // Tokenize function provided
     char *cstr = new char[str.size() + 1];
@@ -225,14 +227,21 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &dPaths) {
         exec(tokens, dPaths);
         return result;
     } else {
+        currentChild = rc;
         //parent process
         int w_status;
         waitpid(rc, &w_status, 0);
-        if (WIFEXITED(w_status) != 1) {
-            cout << "Error" << "\n";
-        }
+        currentChild = -1;
     }
     return 0;
+}
+
+void handle_parent_sig(int signal) {
+
+    if(currentChild != -1){
+        kill(currentChild, signal);
+        cout << "\n";
+    }
 }
 
 void setSignalHandlers() {
@@ -240,7 +249,7 @@ void setSignalHandlers() {
     struct sigaction sa;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
-    sa.sa_handler = SIG_IGN;
+    sa.sa_handler = handle_parent_sig;
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTSTP, &sa, NULL);
 }

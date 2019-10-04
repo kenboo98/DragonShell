@@ -166,7 +166,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
     // Function to accomplish piping from one program to another.
     int fd[2];
     if (pipe(fd) < 0)
-        perror("Piping Student Union BuildingError");
+        perror("Piping Error");
     vector<string> tokens;
     pid_t rc = fork();
     if (rc == 0) {

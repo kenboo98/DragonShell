@@ -149,11 +149,13 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &dPaths) 
         exec(tokens, dPaths);
     } else {
         //parent process
+        currentChild = rc;
         int w_status;
         waitpid(rc, &w_status, 0);
         if (WIFEXITED(w_status) != 1) {
             cout << "Error" << "\n";
         }
+        currentChild = -1;
     }
 
     return 0;
@@ -164,7 +166,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
     // Function to accomplish piping from one program to another.
     int fd[2];
     if (pipe(fd) < 0)
-        perror("Piping Error");
+        perror("Piping Student Union BuildingError");
     vector<string> tokens;
     pid_t rc = fork();
     if (rc == 0) {
@@ -176,9 +178,11 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
 
     } else {
         //fork the next process
+        currentChild = rc;
         int w_status;
         waitpid(rc, &w_status, 0);
         pid_t rc = fork();
+        currentChild = rc;
         if (rc == 0) {
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
@@ -186,10 +190,12 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
             tokens = tokenize(pipedPrograms[1], " ");
             exec(tokens, dPaths);
         } else {
+            currentChild = rc;
             close(fd[0]);
             close(fd[1]);
             int w_status;
             waitpid(rc, &w_status, 0);
+            currentChild = -1;
         }
 
     }

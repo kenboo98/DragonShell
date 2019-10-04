@@ -8,16 +8,11 @@
 #include "builtin.h"
 #include <algorithm>
 #include <signal.h>
-/**
- * @brief Tokenize a string 
- * 
- * @param str - The string to tokenize
- * @param delim - The string containing delimiter character(s)
- * @return std::vector<std::string> - The list of tokenized strings. Can be empty
- */
+
 using namespace std;
 
 std::vector<std::string> tokenize(const std::string &str, const char *delim) {
+    // Tokenize function provided
     char *cstr = new char[str.size() + 1];
     std::strcpy(cstr, str.c_str());
 
@@ -34,11 +29,13 @@ std::vector<std::string> tokenize(const std::string &str, const char *delim) {
 }
 
 void removeSpaces(string &s) {
-    string::iterator endPos = remove(s.begin(), s.end(), ' ');
-    s.erase(endPos, s.end());
+    // Simple function to remove spaces from a string
+    string::iterator endIterator = remove(s.begin(), s.end(), ' ');
+    s.erase(endIterator, s.end());
 }
 
 vector<char *> stringToCharVector(vector<string> &original) {
+    // Convert a string vector to a char vector to pass into the execve function
     vector<char *> charVector;
     for (string s: original) {
         char *cstr = new char[s.size() + 1];
@@ -50,7 +47,7 @@ vector<char *> stringToCharVector(vector<string> &original) {
 }
 
 void exec(vector<string> &tokens, vector<string> &dPaths) {
-
+    // Wrapper function to execute a program using the execve
     vector<char *> charTokens = stringToCharVector(tokens);
     execve(tokens[0].c_str(), &charTokens[0], environ);
 
@@ -64,6 +61,7 @@ void exec(vector<string> &tokens, vector<string> &dPaths) {
 }
 
 void printWelcome() {
+    // Ascii Art taken from http://ascii.co.uk/art/dragon
     const char *welcome =
             "                                        ,   ,\n"
             "                                        $,  $,     ,\n"
@@ -113,6 +111,7 @@ void printWelcome() {
 }
 
 bool builtInCommands(vector<string> &tokens, vector<string> &dPaths, int &background) {
+    // checks through built in commands
     if (tokens[0] == "pwd") {
         pwd();
         return true;
@@ -134,7 +133,7 @@ bool builtInCommands(vector<string> &tokens, vector<string> &dPaths, int &backgr
 }
 
 int outputRedirection(vector<string> &redirectCommands, vector<string> &dPaths) {
-
+    // Function to do Output Redirection
     pid_t rc = fork();
     if (rc == 0) {
         int file_descriptor;
@@ -160,6 +159,7 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &dPaths) 
 
 
 int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
+    // Function to accomplish piping from one program to another.
     int fd[2];
     if (pipe(fd) < 0)
         perror("Piping Error");
@@ -197,6 +197,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
 }
 
 int backgroundProgram(vector<string> &tokens, vector<string> &dPaths, int &background) {
+    // Function to run background program
     tokens.pop_back();
 
     int rc = fork();
@@ -235,6 +236,7 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &dPaths) {
 }
 
 void setSignalHandlers() {
+    // Set Signal Handlers to de
     struct sigaction sa;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -244,9 +246,7 @@ void setSignalHandlers() {
 }
 
 int main(int argc, char **argv) {
-    // print the string prompt without a newline, before beginning to read
-    // tokenize the input, run the command(s), and print the result
-    // do this in a loop
+    // Main loop that runs continuously.
     printWelcome();
     vector<string> dPaths = {"/usr/bin/", "/bin/"};
     setSignalHandlers();

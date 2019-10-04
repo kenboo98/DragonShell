@@ -12,3 +12,5 @@ dragonshell.o: dragonshell.cc
 clean:
 	rm builtin.o dragonshell.o dragonshell
 
+compress:
+	zip a1_tellambu.zip dragonshell.cc builtin.h builtin.cc readme.md Makefile

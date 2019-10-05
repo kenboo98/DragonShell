@@ -61,6 +61,7 @@ void exec(vector<string> &tokens, vector<string> &dPaths) {
 }
 
 void setChildHandlers() {
+    // Run this in the child to reset the handlers to the defaults
     struct sigaction sa;
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = SIG_DFL;
@@ -69,6 +70,7 @@ void setChildHandlers() {
 }
 
 void setSignalHandlers() {
+    // Set in the main process to ignore ctrl-z and ctrl-c
     struct sigaction sa;
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = SIG_IGN;

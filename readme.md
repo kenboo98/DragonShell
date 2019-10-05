@@ -19,7 +19,7 @@ This system call is used to block Dragonshell to wait for a process to complete.
  #### dup2
  `dup2` is used often to redirect output to different targets. For piping, we use `dup2` to redirect STANDARD_OUT to one pipe end and redirect another pipe end to STANDARD_IN of another program. `dup2` is also used write STD_OUT of a program to a file or in the case of background processes, `/dev/null`.
  #### sigaction
- `sigaction` is used to register signal handlers. We set these handlers before the main loop in DragonShell. We create handlers for `SIGINT` and `SIGTSTIP` to ensure that Ctrl-Z and Ctrl-C do exit the program back to bash.
+ `sigaction` is used to register signal handlers. We set these handlers before the main loop in DragonShell. We create handlers for `SIGINT` and `SIGTSTIP` to ensure that Ctrl-Z and Ctrl-C do not exit the program back to bash. When child processes are run, we set the the signal handlers to `SIG_DFL` to make sure that signals are forwarded to child processes. 
  #### chdir
  This function allows us to change the working directory of DragonShell when a user executes cd.
  

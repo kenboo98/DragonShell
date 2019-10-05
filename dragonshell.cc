@@ -11,8 +11,6 @@
 
 using namespace std;
 
-pid_t currentChild = -1;
-
 std::vector<std::string> tokenize(const std::string &str, const char *delim) {
     // Tokenize function provided
     char *cstr = new char[str.size() + 1];
@@ -60,6 +58,22 @@ void exec(vector<string> &tokens, vector<string> &dPaths) {
         execve(temp[0].c_str(), &charTokens[0], environ);
     }
     cout << "Command not found" << "\n";
+}
+
+void setChildHandlers() {
+    struct sigaction sa;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = SIG_DFL;
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTSTP, &sa, NULL);
+}
+
+void setSignalHandlers() {
+    struct sigaction sa;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTSTP, &sa, NULL);
 }
 
 void printWelcome() {
@@ -149,13 +163,11 @@ int outputRedirection(vector<string> &redirectCommands, vector<string> &dPaths) 
         exec(tokens, dPaths);
     } else {
         //parent process
-        currentChild = rc;
         int w_status;
         waitpid(rc, &w_status, 0);
         if (WIFEXITED(w_status) != 1) {
             cout << "Error" << "\n";
         }
-        currentChild = -1;
     }
 
     return 0;
@@ -170,6 +182,7 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
     vector<string> tokens;
     pid_t rc = fork();
     if (rc == 0) {
+        setChildHandlers();
         dup2(fd[1], STDOUT_FILENO);    // stdout = fd[1]
         close(fd[1]);                // stdout is still open
         close(fd[0]);
@@ -178,24 +191,21 @@ int pipePrograms(vector<string> &pipedPrograms, vector<string> &dPaths) {
 
     } else {
         //fork the next process
-        currentChild = rc;
         int w_status;
         waitpid(rc, &w_status, 0);
         pid_t rc = fork();
-        currentChild = rc;
         if (rc == 0) {
+            setChildHandlers();
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
             tokens = tokenize(pipedPrograms[1], " ");
             exec(tokens, dPaths);
         } else {
-            currentChild = rc;
             close(fd[0]);
             close(fd[1]);
             int w_status;
             waitpid(rc, &w_status, 0);
-            currentChild = -1;
         }
 
     }
@@ -210,6 +220,7 @@ int backgroundProgram(vector<string> &tokens, vector<string> &dPaths, int &backg
 
     int rc = fork();
     if (rc == 0) {
+        setChildHandlers();
         background = rc;
         int devnull;
         if ((devnull = open("/dev/null", O_WRONLY, 0644)) < 0)
@@ -228,37 +239,19 @@ int singleExternalProgram(vector<string> &tokens, vector<string> &dPaths) {
     pid_t rc = fork();
 
     if (rc == 0) {
+        setChildHandlers();
         int result = 0;
         //child process
         exec(tokens, dPaths);
         return result;
     } else {
-        currentChild = rc;
         //parent process
         int w_status;
         waitpid(rc, &w_status, 0);
-        currentChild = -1;
     }
     return 0;
 }
 
-void handle_parent_sig(int signal) {
-
-    if(currentChild != -1){
-        kill(currentChild, signal);
-        cout << "\n";
-    }
-}
-
-void setSignalHandlers() {
-    // Set Signal Handlers to de
-    struct sigaction sa;
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_handler = handle_parent_sig;
-    sigaction(SIGINT, &sa, NULL);
-    sigaction(SIGTSTP, &sa, NULL);
-}
 
 int main(int argc, char **argv) {
     // Main loop that runs continuously.
@@ -270,7 +263,7 @@ int main(int argc, char **argv) {
     while (true) {
         cout << "dragonshell > ";
         string input;
-        if (!getline(cin, input)){
+        if (!getline(cin, input)) {
             cout << "\n";
             dsExit(background);
         }
